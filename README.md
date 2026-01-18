@@ -6,6 +6,14 @@ P2P TCP port forwarding over [iroh](https://github.com/n0-computer/iroh).
 
 early sketch. currently vibe coded. seems to work.
 
+## Install
+
+```sh
+eget cablehead/pai-sho
+```
+
+Or download binaries from [releases](https://github.com/cablehead/pai-sho/releases).
+
 ## Usage
 
 ```
