@@ -1,0 +1,8 @@
+{
+  "name": "pai-sho",
+  "engineVersion": "v0.18.14",
+  "sdk": {
+    "source": "go"
+  },
+  "source": ".dagger"
+}
