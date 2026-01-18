@@ -3,6 +3,8 @@ name = "pai-sho"
 version = "0.1.1"
 edition = "2021"
 description = "Peer-to-peer TCP port forwarding over iroh"
+license = "MIT"
+repository = "https://github.com/cablehead/pai-sho"
 
 [dependencies]
 # Networking
