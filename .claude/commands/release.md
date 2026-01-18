@@ -20,9 +20,7 @@ Last few releases: !`git tag --sort=-version:refname | head -5`
 
 ### 1. Pre-Release Confirmation
 
-**Ask the user for the following before starting:**
-- Cargo registry token (if not already set in environment)
-- Confirm the version number: $ARGUMENTS
+**Ask the user to confirm the version number:** $ARGUMENTS
 
 ### 2. Version Management
 
@@ -129,9 +127,19 @@ pai-sho --version  # should show $ARGUMENTS
 
 **Only proceed after macOS verification passes.**
 
-- Use the cargo token provided in step 1: `export CARGO_REGISTRY_TOKEN="..."`
-- Run `cargo publish` to publish to crates.io
-- **Warning**: This step cannot be undone - you cannot unpublish from crates.io
+**⚠️ PAUSE HERE to collect the Cargo registry token from the user.**
+
+Ask the user to paste their token by setting the environment variable:
+```
+$env.CARGO_REGISTRY_TOKEN = "<their-token>"
+```
+
+Wait for them to confirm they've set it, then run:
+```bash
+CARGO_REGISTRY_TOKEN="$env.CARGO_REGISTRY_TOKEN" cargo publish
+```
+
+**Warning**: This step cannot be undone - you cannot unpublish from crates.io
 
 ## Release Complete
 
