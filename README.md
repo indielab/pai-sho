@@ -9,6 +9,14 @@ early sketch. currently vibe coded. seems to work.
 ## Install
 
 ```sh
+cargo install pai-sho
+```
+
+```sh
+brew install cablehead/tap/pai-sho
+```
+
+```sh
 eget cablehead/pai-sho
 ```
 
