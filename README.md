@@ -1,10 +1,29 @@
 # pai-sho
 
-P2P TCP port forwarding over [iroh](https://github.com/n0-computer/iroh).
+P2P TCP port forwarding over [iroh](https://github.com/n0-computer/iroh). Access services on machines that have no inbound ports open -- no VPN, no SSH tunnel, no port forwarding rules.
 
-## Status
+## Why
 
-early sketch. currently vibe coded. seems to work.
+You have a VM, a home server, a dev environment behind a firewall. It runs services on localhost. You want to reach those services from your laptop. The machine has no public IP and no inbound ports.
+
+pai-sho connects your machines directly using iroh's peer-to-peer networking (QUIC, NAT traversal, relay fallback). Expose a port on one side, it appears on `127.0.0.1` on the other. Connections auto-reconnect if the network drops.
+
+## Example
+
+A cloud VM runs a dev server on `:3001` and a monitoring dashboard on `:7331`. No inbound ports are open.
+
+```sh
+# On the VM -- expose both ports
+pai-sho daemon -e 3001 -e 7331
+# Ticket: 5hc4bjqfp6booceusm3jrfebbegyfi6aiqwbgx4xxqmpvg5usoyq
+```
+
+```sh
+# On your laptop -- connect using the ticket
+pai-sho daemon -a 5hc4bjqfp6booceusm3jrfebbegyfi6aiqwbgx4xxqmpvg5usoyq
+```
+
+Your laptop can now reach the VM's services at `localhost:3001` and `localhost:7331`. Close the laptop, reopen it -- the connection restores automatically.
 
 ## Install
 
@@ -28,12 +47,6 @@ Or download binaries from [releases](https://github.com/cablehead/pai-sho/releas
 pai-sho [--socket <path>] <command>
 ```
 
-### Global Options
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--socket` | `/tmp/pai-sho.sock` | Unix socket path |
-
 ### Commands
 
 ```
@@ -53,17 +66,12 @@ list                    Show peers, exposed ports, bindings
 | `--host` | `127.0.0.1` | Address to forward exposed ports to |
 | `-a, --add` | | Add peer on startup (repeatable) |
 | `-e, --expose` | | Expose port on startup (repeatable) |
+| `--socket` | `/tmp/pai-sho.sock` | Unix socket path |
 
-## Example
+## How it works
 
-```sh
-# Machine A - expose port 8080
-pai-sho daemon -e 8080
-# prints ticket: abc123...
+Each daemon gets a unique ticket (an iroh endpoint ID). When you add a peer by ticket, iroh handles discovery and NAT traversal -- connecting directly when possible, falling back through relay servers when needed.
 
-# Machine B - connect to A
-pai-sho daemon -a abc123...
+Exposed ports are announced to peers automatically. When a peer exposes port 3001, a local TCP listener binds `127.0.0.1:3001` on your machine. Traffic is forwarded over an encrypted QUIC connection.
 
-# Now B can reach A's port 8080 at 127.0.0.1:8080
-curl http://127.0.0.1:8080
-```
+If the connection drops, both sides reconnect with exponential backoff. Existing port bindings stay active and resume when the connection restores.

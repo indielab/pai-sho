@@ -41,7 +41,7 @@ Last few releases: !`git tag --sort=-version:refname | head -5`
 
 ### 3. Review Release Notes
 
-**⚠️ REVIEW REQUIRED**: The release notes have been generated in
+**WARNING: REVIEW REQUIRED**: The release notes have been generated in
 `changes/v$ARGUMENTS.md`. Please review them carefully:
 
 - Check that all important changes are highlighted appropriately
@@ -111,7 +111,7 @@ If eget fails, check:
 
 ### 9. Manual Verification Required
 
-**⚠️ CRITICAL: macOS Verification BEFORE Publishing to Crates.io**
+**WARNING: CRITICAL: macOS Verification BEFORE Publishing to Crates.io**
 
 After homebrew formula is updated, **PAUSE** and ask a macOS user to test:
 
@@ -127,7 +127,7 @@ pai-sho --version  # should show $ARGUMENTS
 
 **Only proceed after macOS verification passes.**
 
-**⚠️ PAUSE HERE to collect the Cargo registry token from the user.**
+**WARNING: PAUSE HERE to collect the Cargo registry token from the user.**
 
 Ask the user to paste their token by setting the environment variable:
 ```
@@ -144,10 +144,10 @@ CARGO_REGISTRY_TOKEN="$env.CARGO_REGISTRY_TOKEN" cargo publish
 ## Release Complete
 
 The release is now public! Summary:
-- ✅ GitHub release: https://github.com/cablehead/pai-sho/releases/tag/v$ARGUMENTS
-- ✅ eget: `eget cablehead/pai-sho`
-- ✅ Homebrew: `brew install cablehead/tap/pai-sho`
-- ✅ Crates.io: `cargo install pai-sho`
+- GitHub release: https://github.com/cablehead/pai-sho/releases/tag/v$ARGUMENTS
+- eget: `eget cablehead/pai-sho`
+- Homebrew: `brew install cablehead/tap/pai-sho`
+- Crates.io: `cargo install pai-sho`
 
 ## Rollback Plan
 

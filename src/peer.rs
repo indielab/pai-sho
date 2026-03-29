@@ -265,7 +265,7 @@ impl PeerManager {
         let remote_id = conn.remote_id()?;
 
         if let Some(peer) = self.peers.get(&remote_id) {
-            // Known peer reconnecting — close old connection, install new one
+            // Known peer reconnecting -- close old connection, install new one
             let mut conn_guard = peer.connection.write().await;
             if let Some(old_conn) = conn_guard.take() {
                 old_conn.close(0u32.into(), b"replaced");
