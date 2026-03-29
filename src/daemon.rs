@@ -16,10 +16,8 @@ use tracing::{error, info};
 pub struct Daemon {
     /// The iroh endpoint
     endpoint: Endpoint,
-    /// Host to forward exposed ports to
-    host: IpAddr,
-    /// Ports we expose to peers
-    exposed_ports: RwLock<HashSet<u16>>,
+    /// Ports we expose to peers (shared with PeerManager for reconnect re-announce)
+    exposed_ports: Arc<RwLock<HashSet<u16>>>,
     /// Connected peers
     peers: PeerManager,
 }
@@ -35,11 +33,12 @@ impl Daemon {
             .await
             .context("failed to create iroh endpoint")?;
 
+        let exposed_ports = Arc::new(RwLock::new(HashSet::new()));
+
         Ok(Arc::new(Self {
+            peers: PeerManager::new(endpoint.clone(), host, exposed_ports.clone()),
             endpoint,
-            host,
-            exposed_ports: RwLock::new(HashSet::new()),
-            peers: PeerManager::new(),
+            exposed_ports,
         }))
     }
 
@@ -100,19 +99,13 @@ impl Daemon {
 
     async fn handle_incoming(&self, incoming: iroh::endpoint::Incoming) -> Result<()> {
         let conn = incoming.accept()?.await?;
-        let remote_id = conn.remote_id()?;
-        info!("incoming connection from {}", remote_id);
-
-        // Handle peer protocol (port announcements, tunnel requests)
-        let exposed = self.get_exposed_ports().await;
-        self.peers.handle_connection(conn, self.host, exposed).await
+        self.peers.handle_connection(conn).await
     }
 
     /// Handle a request from the CLI client
     pub async fn handle_request(self: &Arc<Self>, request: Request) -> Response {
         match request {
-            Request::AddPeer { ticket } => match self.peers.add_peer(&self.endpoint, &ticket).await
-            {
+            Request::AddPeer { ticket } => match self.peers.add_peer(&ticket).await {
                 Ok(()) => {
                     // Send our exposed ports to the new peer
                     let ports = self.get_exposed_ports().await;
@@ -161,7 +154,7 @@ pub async fn run(
 
     // Add peers specified on command line
     for ticket in &peers {
-        match daemon.peers.add_peer(&daemon.endpoint, ticket).await {
+        match daemon.peers.add_peer(ticket).await {
             Ok(()) => {
                 info!("added peer {}", ticket);
             }
