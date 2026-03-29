@@ -10,7 +10,7 @@ pai-sho connects your machines directly using iroh's peer-to-peer networking (QU
 
 ## Example
 
-A cloud VM runs a dev server on `:3001` and a monitoring dashboard on `:7331`. No inbound ports are open.
+A cloud VM runs an [http-nu](https://github.com/cablehead/http-nu) app on `:3001` and [stellar](https://github.com/cablehead/stellar) on `:7331` for live CSS editing via [Datastar](https://data-star.dev/). No inbound ports are open.
 
 ```sh
 # On the VM -- expose both ports
