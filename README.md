@@ -84,4 +84,4 @@ If the connection drops, both sides reconnect with exponential backoff. Existing
 
 **Tailscale / ZeroTier** -- full mesh VPNs that give every machine an IP on a virtual network. pai-sho is narrower on purpose: you expose specific ports, not your whole machine. No kernel extensions, no virtual network interfaces, no admin console.
 
-**[dumbpipe](https://github.com/n0-computer/dumbpipe)** -- also built on iroh, pipes stdin/stdout or a single TCP port between two peers. pai-sho builds on the same foundation but manages multiple ports, persists peer relationships across restarts, and auto-reconnects.
+**[dumbpipe](https://github.com/n0-computer/dumbpipe)** -- also built on iroh, pipes stdin/stdout or a single TCP port between two peers. pai-sho builds on the same foundation but manages multiple ports, multiple peers, and auto-reconnects when the connection drops.
