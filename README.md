@@ -75,3 +75,13 @@ Each daemon gets a unique ticket (an iroh endpoint ID). When you add a peer by t
 Exposed ports are announced to peers automatically. When a peer exposes port 3001, a local TCP listener binds `127.0.0.1:3001` on your machine. Traffic is forwarded over an encrypted QUIC connection.
 
 If the connection drops, both sides reconnect with exponential backoff. Existing port bindings stay active and resume when the connection restores.
+
+## Compared to
+
+**ngrok / Cloudflare Tunnel** -- route traffic through a third-party server. Great for exposing HTTP to the public internet, but you're trusting someone else's infrastructure and often paying for it. pai-sho is peer-to-peer: traffic goes directly between your machines when possible, with iroh's relay as fallback. No account, no signup, no domain to configure.
+
+**SSH tunnels** -- require an SSH server with inbound access on at least one side. pai-sho works when neither machine has inbound ports open.
+
+**Tailscale / ZeroTier** -- full mesh VPNs that give every machine an IP on a virtual network. pai-sho is narrower on purpose: you expose specific ports, not your whole machine. No kernel extensions, no virtual network interfaces, no admin console.
+
+**[dumbpipe](https://github.com/n0-computer/dumbpipe)** -- also built on iroh, pipes stdin/stdout or a single TCP port between two peers. pai-sho builds on the same foundation but manages multiple ports, persists peer relationships across restarts, and auto-reconnects.
