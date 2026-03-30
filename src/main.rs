@@ -9,8 +9,7 @@ mod protocol;
 mod tunnel;
 
 #[derive(Parser)]
-#[command(name = "pai-sho")]
-#[command(about = "P2P TCP port forwarding over iroh")]
+#[clap(name = "pai-sho", about = "P2P TCP port forwarding over iroh", version)]
 struct Cli {
     /// Path to Unix socket
     #[arg(long, default_value = "/tmp/pai-sho.sock")]
