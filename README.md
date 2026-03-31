@@ -1,6 +1,6 @@
 # pai-sho
 
-P2P TCP port forwarding over [iroh](https://github.com/n0-computer/iroh).
+What happens when you want [dumbpipe](https://github.com/n0-computer/dumbpipe) to stay running, handle a few ports at once, and reconnect when your laptop wakes up.
 
 My workflow is generally a dedicated VM per task -- a [vibenv](https://github.com/cablehead/vibenv.dag). These environments tend to have no open inbound ports. iroh's [dumbpipe](https://github.com/n0-computer/dumbpipe) worked nicely for reaching a single port, but when you need 3-4 ports you have to run 3-4 dumbpipes on each side -- so 6-8 processes just to share a few ports. pai-sho gives you a single long-lived daemon that manages multiple ports. You can expose and unexpose them on the fly, and if the connection drops it comes back on its own.
 
@@ -89,4 +89,4 @@ If the connection drops, both sides reconnect with exponential backoff. Existing
 
 [Tailscale](https://tailscale.com) and [ZeroTier](https://www.zerotier.com) give every machine an IP on a virtual network. pai-sho is narrower -- you expose specific ports, not your whole machine. It can be easier to reason about what you're exposing when you go port by port.
 
-[dumbpipe](https://github.com/n0-computer/dumbpipe) is the direct inspiration. It pipes a single TCP port between two peers. pai-sho builds on the same iroh foundation but manages multiple ports, multiple peers, and auto-reconnects.
+[dumbpipe](https://github.com/n0-computer/dumbpipe) is the direct inspiration.

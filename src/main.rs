@@ -9,7 +9,7 @@ mod protocol;
 mod tunnel;
 
 #[derive(Parser)]
-#[clap(name = "pai-sho", about = "P2P TCP port forwarding over iroh", version)]
+#[clap(name = "pai-sho", about = "What happens when you want dumbpipe to stay running, handle a few ports at once, and reconnect when your laptop wakes up", version)]
 struct Cli {
     /// Path to Unix socket
     #[arg(long, default_value = "/tmp/pai-sho.sock")]
