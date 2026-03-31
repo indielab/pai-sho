@@ -87,6 +87,6 @@ If the connection drops, both sides reconnect with exponential backoff. Existing
 
 [SSH tunnels](https://www.ssh.com/academy/ssh/tunneling) need inbound access on at least one side. pai-sho works when neither machine has open inbound ports.
 
-[Tailscale](https://tailscale.com) and [ZeroTier](https://www.zerotier.com) give every machine an IP on a virtual network. pai-sho is narrower -- you expose specific ports, not your whole machine. It can be easier to reason about what you're exposing when you go port by port.
+[WireGuard](https://www.wireguard.com/), [Tailscale](https://tailscale.com), [NetBird](https://netbird.io/) -- mesh VPNs that give every machine an IP on a virtual network. pai-sho is narrower -- you expose specific ports, not your whole machine. It can be easier to reason about what you're exposing when you go port by port.
 
 [dumbpipe](https://github.com/n0-computer/dumbpipe) is the direct inspiration.
