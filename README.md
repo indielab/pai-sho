@@ -83,10 +83,10 @@ If the connection drops, both sides reconnect with exponential backoff. Existing
 
 ## See also
 
-[ngrok](https://ngrok.com) and [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) are great when you need a public URL others can reach. pai-sho is for connecting your own machines, not exposing services to the internet.
+[ngrok](https://ngrok.com) and [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) are great when you need a public URL anyone can reach. pai-sho is more for connecting your own machines or sharing a ticket with a friend so they can see something you're working on.
 
 [SSH tunnels](https://www.ssh.com/academy/ssh/tunneling) need inbound access on at least one side. pai-sho works when neither machine has open inbound ports.
 
-[Tailscale](https://tailscale.com) and [ZeroTier](https://www.zerotier.com) give every machine an IP on a virtual network. pai-sho is narrower -- you expose specific ports, not your whole machine. Sometimes that's all you need.
+[Tailscale](https://tailscale.com) and [ZeroTier](https://www.zerotier.com) give every machine an IP on a virtual network. pai-sho is narrower -- you expose specific ports, not your whole machine. It can be easier to reason about what you're exposing when you go port by port.
 
 [dumbpipe](https://github.com/n0-computer/dumbpipe) is the direct inspiration. It pipes a single TCP port between two peers. pai-sho builds on the same iroh foundation but manages multiple ports, multiple peers, and auto-reconnects.
