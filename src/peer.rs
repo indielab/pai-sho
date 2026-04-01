@@ -167,39 +167,63 @@ impl PeerManager {
         loop {
             tokio::select! {
                 result = conn.accept_uni() => {
-                    let mut recv = result?;
-                    let data = recv.read_to_end(64 * 1024).await?;
-                    let msg: PeerMessage = serde_json::from_slice(&data)?;
-
-                    match msg {
-                        PeerMessage::ExposedPorts(ports) => {
-                            info!("{} exposed ports: {:?}", peer.endpoint_id, ports);
-                            Self::update_peer_ports(peer, ports).await;
-                        }
-                        PeerMessage::Connect { port: _ } => {
-                            warn!("unexpected Connect message on control stream");
-                        }
-                        PeerMessage::Error(e) => {
-                            error!("peer error: {}", e);
-                        }
-                    }
+                    let recv = result?;
+                    let peer = peer.clone();
+                    tokio::spawn(async move {
+                        Self::handle_uni_stream(recv, &peer).await;
+                    });
                 }
                 result = conn.accept_bi() => {
-                    let (send, mut recv) = result?;
-                    let mut buf = [0u8; 2];
-                    recv.read_exact(&mut buf).await?;
-                    let port = u16::from_be_bytes(buf);
-
-                    info!("tunnel request for port {}", port);
-
+                    let (send, recv) = result?;
                     tokio::spawn(async move {
-                        if let Err(e) = tunnel::handle_tunnel(host, port, send, recv).await {
+                        if let Err(e) = Self::handle_bi_stream(host, send, recv).await {
                             error!("tunnel error: {}", e);
                         }
                     });
                 }
             }
         }
+    }
+
+    async fn handle_uni_stream(mut recv: iroh::endpoint::RecvStream, peer: &Arc<Peer>) {
+        let data = match recv.read_to_end(64 * 1024).await {
+            Ok(data) => data,
+            Err(e) => {
+                warn!("uni stream read error: {}", e);
+                return;
+            }
+        };
+        let msg: PeerMessage = match serde_json::from_slice(&data) {
+            Ok(msg) => msg,
+            Err(e) => {
+                warn!("uni stream parse error: {}", e);
+                return;
+            }
+        };
+        match msg {
+            PeerMessage::ExposedPorts(ports) => {
+                info!("{} exposed ports: {:?}", peer.endpoint_id, ports);
+                Self::update_peer_ports(peer, ports).await;
+            }
+            PeerMessage::Connect { port: _ } => {
+                warn!("unexpected Connect message on control stream");
+            }
+            PeerMessage::Error(e) => {
+                error!("peer error: {}", e);
+            }
+        }
+    }
+
+    async fn handle_bi_stream(
+        host: IpAddr,
+        send: iroh::endpoint::SendStream,
+        mut recv: iroh::endpoint::RecvStream,
+    ) -> Result<()> {
+        let mut buf = [0u8; 2];
+        recv.read_exact(&mut buf).await?;
+        let port = u16::from_be_bytes(buf);
+        info!("tunnel request for port {}", port);
+        tunnel::handle_tunnel(host, port, send, recv).await
     }
 
     /// Update peer's exposed ports and manage bindings
