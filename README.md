@@ -1,3 +1,7 @@
+<p align="center">
+  <img alt="A forest spirit placing a tile on a pai sho board" width="380" src="docs/assets/pai-sho.png">
+</p>
+
 <h1 align="center">pai-sho</h1>
 
 <p align="center">
