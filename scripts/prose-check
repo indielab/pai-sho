@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+"""Fail on the prose tells listed in AGENTS.md.
+
+Catches what is mechanically detectable. It cannot catch invented detail or
+rhetorical framing, so it is a floor, not a substitute for reading.
+
+Usage: scripts/prose-check [files...]        (defaults to tracked markdown)
+"""
+import re
+import subprocess
+import sys
+
+FENCE = re.compile(r"```.*?```", re.S)
+HTML = re.compile(r"<[^>]+>")
+LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+TABLE = re.compile(r"^\s*\|")
+
+
+def prose(text):
+    """Strip code fences, HTML, table rows; keep link text only."""
+    text = FENCE.sub("", text)
+    text = HTML.sub("", text)
+    text = LINK.sub(r"\1", text)
+    return "\n".join(l for l in text.split("\n") if not TABLE.match(l))
+
+
+def paragraphs(text):
+    for block in prose(text).split("\n\n"):
+        block = " ".join(block.split())
+        if block and not block.startswith(("#", "-", "*", ">", "|")):
+            yield block
+
+
+def sentences(para):
+    return [s for s in re.split(r"(?<=[.:!?])\s+", para) if s]
+
+
+def check(path):
+    text = open(path, encoding="utf-8").read()
+    out = []
+
+    for m in re.finditer(r"[^\x00-\x7f]", text):
+        line = text[: m.start()].count("\n") + 1
+        out.append((line, "non-ascii", repr(m.group(0))))
+
+    for para in paragraphs(text):
+        sents = sentences(para)
+
+        for s in sents:
+            if re.search(r",\s+\w+(ing|ed)\b[^.]*$", s):
+                out.append((0, "participial coda", s[:70]))
+            if re.search(r"\w+, \w[\w\s`']{2,30}, and \w", s):
+                out.append((0, "rule of three", s[:70]))
+            if re.search(
+                r"\b(two halves|three things|four things|what differs|"
+                r"the difference is|worth stating|here is (why|what)|"
+                r"the (real|actual) \w+ is)\b",
+                s,
+                re.I,
+            ):
+                out.append((0, "announces structure", s[:70]))
+
+        # Cadence: a paragraph that descends to a short landing beat.
+        if len(sents) >= 3:
+            lens = [len(s.split()) for s in sents]
+            if lens[-1] <= 6 and lens[-1] < min(lens[:-1]):
+                out.append((0, "descends to a landing beat", sents[-1][:70]))
+
+    return out
+
+
+def main(argv):
+    files = argv[1:]
+    if not files:
+        files = subprocess.run(
+            ["git", "ls-files", "*.md"], capture_output=True, text=True
+        ).stdout.split()
+
+    total = 0
+    for f in files:
+        for line, kind, detail in check(f):
+            where = f"{f}:{line}" if line else f
+            print(f"{where}: {kind}: {detail}")
+            total += 1
+
+    if total:
+        print(f"\n{total} finding(s). See AGENTS.md, Writing style.")
+    return 1 if total else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

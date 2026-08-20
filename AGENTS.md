@@ -26,6 +26,35 @@ Before committing:
 2. `cargo clippy` - fix lints
 3. `cargo test` - run tests
 
+## Writing style
+
+Applies to READMEs, changelogs, ADRs, PR descriptions, commit messages, and code
+comments.
+
+- **Plain, not rhetorical.** No setup-then-reversal. State the point directly.
+- **No trailing participial coda.** Do not tack a ", ...ing/...ed ..." clause onto
+  a sentence that already finished its job.
+- **Avoid the rule of three.** Balanced parallel triads are a tell. Use two, or an
+  uneven list, or vary the clause shapes.
+- **No redundant summary coda.** If the sentence made the point, stop.
+- **No landing beats.** A paragraph that descends to a short punchy close, over
+  and over, is the strongest tell there is. Do not end paragraphs on a reveal.
+- **ASCII only, no em-dashes.** Restructure with a period, colon, comma, or
+  parentheses.
+- **No opaque jargon.** Name the actual thing.
+- **No wasted words.** Each word earns its place.
+- **Vary sentence length.** Cadenced balance reads machine-generated.
+- **Invent nothing.** Every claim traces to the repo, the tests, or something the
+  author said. No plausible-sounding history.
+
+The common thread: de-cadence. Say each thing once, plainly, and let the
+sentences be uneven.
+
+Run `scripts/prose-check` before committing prose. It catches the mechanical
+tells. It cannot catch invented detail or rhetorical framing, so narrative prose
+(taglines, changelog stories, positioning) is written or approved by the author,
+not generated.
+
 ## Key Concepts
 
 - **Daemon**: Single iroh Endpoint with a stable key, manages all peers
