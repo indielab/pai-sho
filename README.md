@@ -22,10 +22,6 @@
   </a>
 </p>
 
-Machines link by invitation: one side extends it, the other takes it up. Access
-is default deny. You grant a port to a peer's key, and that peer alone can reach
-it.
-
 ## Example scenarios
 
 Both assume a daemon already running on each machine. [Install](#install) sets
