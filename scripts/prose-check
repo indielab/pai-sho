@@ -11,7 +11,12 @@ import subprocess
 import sys
 
 FENCE = re.compile(r"```.*?```", re.S)
+HTML_BLOCK = re.compile(r"<(p|div|h1|table)\b.*?</\1>", re.S)
 HTML = re.compile(r"<[^>]+>")
+
+# ADRs are an append-only record of decisions as they were made. Rewriting them
+# for style would destroy the thing they exist for, so they are not gated.
+SKIP = ("docs/adr/",)
 LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
 TABLE = re.compile(r"^\s*\|")
 
@@ -19,6 +24,7 @@ TABLE = re.compile(r"^\s*\|")
 def prose(text):
     """Strip code fences, HTML, table rows; keep link text only."""
     text = FENCE.sub("", text)
+    text = HTML_BLOCK.sub("", text)
     text = HTML.sub("", text)
     text = LINK.sub(r"\1", text)
     return "\n".join(l for l in text.split("\n") if not TABLE.match(l))
@@ -49,8 +55,15 @@ def check(path):
         for s in sents:
             if re.search(r",\s+\w+(ing|ed)\b[^.]*$", s):
                 out.append((0, "participial coda", s[:70]))
-            if re.search(r"\w+, \w[\w\s`']{2,30}, and \w", s):
+            # A rhetorical triad is three parallel *clauses*, not a list of
+            # nouns. Require each segment to carry some weight.
+            m = re.search(r"\b(\w[\w\s`'\-]{6,40}), (\w[\w\s`'\-]{6,40}), and (\w[\w\s`'\-]{6,40})\b", s)
+            if m and all(len(g.split()) >= 3 for g in m.groups()):
                 out.append((0, "rule of three", s[:70]))
+            # Semicolon triads: "A, since X; B, since Y; and C" is the same
+            # rhetorical shape, and commas alone will not catch it.
+            if s.count(";") >= 2 and re.search(r";\s+and\b", s):
+                out.append((0, "rule of three (semicolons)", s[:70]))
             if re.search(
                 r"\b(two halves|three things|four things|what differs|"
                 r"the difference is|worth stating|here is (why|what)|"
@@ -62,9 +75,16 @@ def check(path):
 
         # Cadence: a paragraph that descends to a short landing beat.
         if len(sents) >= 3:
-            lens = [len(s.split()) for s in sents]
-            if lens[-1] <= 6 and lens[-1] < min(lens[:-1]):
-                out.append((0, "descends to a landing beat", sents[-1][:70]))
+            last = sents[-1]
+            exempt = (
+                last.startswith(("See ", "See:"))          # cross-reference
+                or last.startswith("(")                     # parenthetical aside
+                or last.rstrip(".").endswith(":")           # lead-in to a block
+                or re.fullmatch(r"[`\w,.\- ]*", last) and last.count("`") >= 4
+            )                                               # bare list of names
+            lens = [len(x.split()) for x in sents]
+            if not exempt and lens[-1] <= 6 and lens[-1] < min(lens[:-1]):
+                out.append((0, "descends to a landing beat", last[:70]))
 
     return out
 
@@ -75,6 +95,7 @@ def main(argv):
         files = subprocess.run(
             ["git", "ls-files", "*.md"], capture_output=True, text=True
         ).stdout.split()
+        files = [f for f in files if not f.startswith(SKIP)]
 
     total = 0
     for f in files:

@@ -335,8 +335,8 @@ next step.
 
 [docs/scenarios.md](docs/scenarios.md) works two flows end to end: a shared build
 box reached from a laptop, and a laptop booting a vibenv. Each says what has to
-be true, what travels between the machines, and why the commands are shaped the
-way they are. Its [invariants](docs/scenarios.md#invariants) are the shortest
+be true and what travels between the machines, and why the commands took the
+shape they did. Its [invariants](docs/scenarios.md#invariants) are the shortest
 statement of the model.
 
 The [ADRs](docs/adr) record the decisions and how they moved: directed grants,

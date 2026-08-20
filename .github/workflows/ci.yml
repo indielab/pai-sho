@@ -12,6 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Check prose
+        run: |
+          ./scripts/prose-check
+          echo "$(cat docs/tech-writer/PROMPT.sha256)  docs/tech-writer/PROMPT.md" \
+            | sha256sum -c - \
+            || { echo "PROMPT.md changed without rerunning the writer cases."; \
+                 echo "See docs/tech-writer/README.md"; exit 1; }
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:

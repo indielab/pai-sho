@@ -1,8 +1,8 @@
 # Scenarios
 
 Worked end-to-end flows, written from the operator's side. Each one states what
-has to be true, what travels between machines, and where the flow is rougher
-than it needs to be.
+has to be true and what travels between the machines. Where a flow is rougher
+than it needs to be, it says so.
 
 The command reference lives in the [README](../README.md#commands).
 
@@ -42,8 +42,9 @@ A team runs a long-lived build box. It serves a dashboard on `8080`. I want to
 reach it from my laptop, and my laptop is already running a daemon of its own
 for unrelated work.
 
-This is not the README's case. Both machines are long-lived, both already have
-an identity, and neither is a fresh workload booting into an operator's network.
+This is not the README's case. Both machines are long-lived and both already
+have an identity. Neither is a fresh workload booting into an operator's
+network.
 
 ### What has to be true
 
@@ -196,9 +197,8 @@ An invitation addressed to a key needs no code, so both values on the VM's
 cmdline are public: my key and its own key path. There is no secret to leak and
 no race, because I only ever accept the one key the host named.
 
-The ordering does not matter. If the VM says yes before I have invited it, it is
-refused and retries with backoff, and the link establishes as soon as the
-`invite` lands.
+The ordering does not matter. A VM that says yes before I have invited it is
+refused, then retries with backoff until the `invite` lands.
 
 This is where the union in `accept <invite|key>` pays off. The two paths differ
 only in what the launcher can safely put on a cmdline; the VM's command is
