@@ -215,7 +215,8 @@ who to dial, and the proof you may. When you already know a peer's key,
 **Connecting.** Peers dial by public key over
 [iroh](https://github.com/n0-computer/iroh). It punches through NAT, so neither
 side needs an open inbound port or a public IP. When it can't punch through, an
-n0 relay forwards the traffic without being able to read it.
+[n0](https://n0.computer/) relay forwards the traffic without being able to read
+it.
 
 **Forwarding.** Each peer hears only the ports granted to it, and traffic runs
 over the encrypted QUIC connection. It goes both ways: something on your own
@@ -288,7 +289,7 @@ then [hole punching](https://tailscale.com/blog/how-nat-traversal-works) gets a
 direct path. When it can't, a relay carries the traffic:
 [DERP](https://tailscale.com/kb/1232/derp-servers) for Tailscale,
 [iroh's relays](https://www.iroh.computer/docs/concepts/relay) for pai-sho, run
-by n0. That whole layer comes from
+by [n0](https://n0.computer/). That whole layer comes from
 [iroh](https://github.com/n0-computer/iroh). What Tailscale has and pai-sho does
 not is a row above all that.
 
