@@ -5,7 +5,7 @@
 <h1 align="center">pai-sho</h1>
 
 <p align="center">
-  Forward ports between your own machines, peer to peer.<br>
+  Forward ports between your own machines, peer to peer over <a href="https://github.com/n0-computer/iroh">iroh</a>.<br>
   Neither side needs an account, a public IP, or an open inbound port.<br>
   Only what you grant is reachable.
 </p>
@@ -265,14 +265,75 @@ something you're working on.
 [SSH tunnels](https://www.ssh.com/academy/ssh/tunneling) need inbound access on at
 least one side. pai-sho works when neither machine has open inbound ports.
 
-[WireGuard](https://www.wireguard.com/), [Tailscale](https://tailscale.com), and
-[NetBird](https://netbird.io/) are mesh VPNs that put every machine on a virtual
-network. pai-sho is narrower: you expose specific ports, not the whole machine,
-which keeps it easy to reason about exactly what is reachable.
+[WireGuard](https://www.wireguard.com/) has no control plane and no relays. It
+only goes direct, so a peer entry in the
+[config file](https://www.wireguard.com/quickstart/) needs an `Endpoint` with a
+routable address. There is no hole punching and no fallback. If both machines are
+behind NAT, you are standing up a bounce host yourself. Tailscale adds that
+machinery around WireGuard; pai-sho gets it from iroh, over QUIC.
 
 [dumbpipe](https://github.com/n0-computer/dumbpipe) is the direct inspiration.
 [pigeons](https://pigeons.computer), SSH over iroh from the same team, is where
 pai-sho's connection handling comes from.
+
+## Why not Tailscale?
+
+You probably should use [Tailscale](https://tailscale.com). It solves this
+problem well, and there is a company behind it.
+
+### No account
+
+The connection machinery is the same. Servers negotiate the initial connection,
+then [hole punching](https://tailscale.com/blog/how-nat-traversal-works) gets a
+direct path. When it can't, a relay carries the traffic:
+[DERP](https://tailscale.com/kb/1232/derp-servers) for Tailscale,
+[iroh's relays](https://www.iroh.computer/docs/concepts/relay) for pai-sho, run
+by n0. That whole layer comes from
+[iroh](https://github.com/n0-computer/iroh). What Tailscale has and pai-sho does
+not is a row above all that.
+
+```
+Tailscale
+  box ------->  controlplane.tailscale.com  <------- laptop   membership
+  box <~ ~ ~ ~  derp*.tailscale.com         ~ ~ ~ ~> laptop   negotiate, relay
+  box <--------------------------------------------> laptop   direct
+
+pai-sho
+  box <~ ~ ~ ~  *.relay.iroh.network        ~ ~ ~ ~> laptop   negotiate, relay
+  box <--------------------------------------------> laptop   direct
+```
+
+A Tailscale node registers with the
+[coordination server](https://tailscale.com/blog/how-tailscale-works), which
+decides membership and hands it a filtered list of the peers it may see. A
+pai-sho box dials your laptop by public key, resolved by
+[iroh's discovery](https://www.iroh.computer/docs/concepts/discovery).
+Nothing in that path can add a peer to your set, and there is nothing to sign up
+for.
+
+### Specific ports, not a whole machine
+
+Tailscale gives a peer an IP, and everything listening on it is reachable unless
+an [ACL](https://tailscale.com/kb/1018/acls) says otherwise. Default allow, then
+narrow it. pai-sho grants one port at a time to one key, and a peer with no
+grants sees nothing. Day to day the two feel much the same, since you type a
+name and a port either way.
+
+### Less to install
+
+Without `--tun`, pai-sho binds loopback addresses. On Linux that needs no
+network device and no privilege, because `127.0.0.0/8` already routes to `lo`.
+Tailscale needs a tun device, or its
+[userspace mode](https://tailscale.com/kb/1112/userspace-networking), which
+gives you a proxy rather than real listeners. `--tun` puts pai-sho in the same
+position, so this only holds on loopback.
+
+### Tailscale's ops story is much nicer
+
+One [policy file](https://tailscale.com/kb/1337/policy-syntax) for the whole
+tailnet, so who-can-reach-what is a thing you read in a single place. pai-sho's
+answer is "which command did you run on which machine." A web UI is the obvious
+next step.
 
 ## More
 
