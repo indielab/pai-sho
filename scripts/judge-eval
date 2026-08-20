@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+"""Score a judge run against the labelled corpus.
+
+The judge needs a model, so this cannot run in CI. Run the judge over each
+sample by hand, record what it returned, then score:
+
+    scripts/judge-eval results.txt
+
+results.txt is one line per case:
+
+    01-landing-beats REVISE
+    06-human-adr PASS
+
+Two failure modes, and the second is the dangerous one:
+
+  MISS         judge passed something a human rejected. The judge is too soft.
+  FALSE ALARM  judge blocked something a human wrote or approved. The judge is
+               drifting toward rejecting everything, which is how a gate becomes
+               noise people route around.
+
+Fix a miss by tightening JUDGE.md. Fix a false alarm by loosening it. Rerun the
+whole corpus after either, because the two pull in opposite directions.
+"""
+import pathlib
+import re
+import sys
+
+CASES = pathlib.Path("docs/tech-writer/judge-cases")
+
+
+def expected():
+    out = {}
+    for d in sorted(CASES.iterdir()):
+        if not d.is_dir():
+            continue
+        m = re.search(r"^verdict:\s*(\w+)", (d / "expect.md").read_text(), re.M)
+        out[d.name] = m.group(1).upper()
+    return out
+
+
+def main(argv):
+    if len(argv) < 2:
+        print(__doc__)
+        print("cases:")
+        for name, v in expected().items():
+            print(f"  {name}  expects {v}")
+        return 0
+
+    want = expected()
+    got = {}
+    for line in open(argv[1]):
+        parts = line.split()
+        if len(parts) >= 2:
+            got[parts[0]] = parts[1].upper()
+
+    misses, alarms, ok, absent = [], [], [], []
+    for name, w in want.items():
+        g = got.get(name)
+        if g is None:
+            absent.append(name)
+        elif g == w:
+            ok.append(name)
+        elif w == "REVISE":
+            misses.append(name)
+        else:
+            alarms.append(name)
+
+    for name in misses:
+        print(f"MISS         {name}: human rejected this, judge passed it")
+    for name in alarms:
+        print(f"FALSE ALARM  {name}: human wrote or approved this, judge blocked it")
+    for name in absent:
+        print(f"NOT RUN      {name}")
+
+    total = len(want)
+    print(f"\n{len(ok)}/{total} correct.", end="")
+    if misses:
+        print(f" {len(misses)} miss(es): tighten JUDGE.md.", end="")
+    if alarms:
+        print(f" {len(alarms)} false alarm(s): loosen JUDGE.md.", end="")
+    print()
+    return 1 if (misses or alarms or absent) else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

@@ -1,0 +1,12 @@
+01-landing-beats REVISE
+02-opening-beat REVISE
+03-invented-detail REVISE
+04-stilted-summary REVISE
+05-trailing-coda REVISE
+06-human-adr PASS
+07-human-readme PASS
+08-authors-closing-line PASS
+
+# 8/8 as of the JUDGE.md at commit fbd6ca0, run one agent per case.
+# Rerun the whole file after any JUDGE.md edit: tightening for a miss and
+# loosening for a false alarm pull against each other.

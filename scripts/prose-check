@@ -22,7 +22,12 @@ HTML = re.compile(r"<[^>]+>")
 SKIP = (
     "docs/adr/",
     "docs/tech-writer/PROMPT.md",
+    "docs/tech-writer/JUDGE.md",
     "docs/tech-writer/README.md",
+    # The judge corpus is deliberately bad prose kept as fixtures. Gating it
+    # would mean fixing the examples, which is the one thing that must not
+    # happen to them.
+    "docs/tech-writer/judge-cases/",
 )
 SKIP_NAMES = ("brief.md",)
 LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
@@ -57,6 +62,8 @@ def prose(text):
 def paragraphs(text):
     for block in prose(text).split("\n\n"):
         block = " ".join(block.split())
+        if re.match(r"^\d+[.)]\s", block):      # numbered list item
+            continue
         if block and not block.startswith(("#", "-", "*", ">", "|")):
             yield block
 
@@ -69,6 +76,9 @@ def check(path):
     text = open(path, encoding="utf-8").read()
     out = []
 
+    # A file whose voice is first person by design says so up top, once.
+    file_allows_fp = ALLOW_FP in text[:400]
+
     for m in re.finditer(r"[^\x00-\x7f]", text):
         line = text[: m.start()].count("\n") + 1
         out.append((line, "non-ascii", repr(m.group(0))))
@@ -78,7 +88,7 @@ def check(path):
             out.append((i, "narrative heading", line.strip()[:70]))
 
     for para in paragraphs(text):
-        if not para.startswith(ALLOW_FP):
+        if not file_allows_fp and not para.startswith(ALLOW_FP):
             m = FIRST_PERSON.search(para)
             if m:
                 out.append((0, "first person", f"'{m.group(0)}' in: {para[:55]}"))

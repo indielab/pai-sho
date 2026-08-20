@@ -1,3 +1,4 @@
+<!-- prose-check: allow first-person -->
 # Scenarios
 
 Worked end-to-end flows, written from the operator's side. Each one states what
