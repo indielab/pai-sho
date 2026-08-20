@@ -26,57 +26,59 @@ Machines link by invitation: one side extends it, the other takes it up. Access
 is default deny. You grant a port to a peer's key, and that peer alone can reach
 it.
 
-## Example
+## Example scenarios
 
-Say you boot a dedicated VM per task, a
+Both assume a daemon already running on each machine. [Install](#install) sets
+that up; [Setting up the network](#setting-up-the-network) covers doing it by
+hand.
+
+### A laptop boots a VM
+
+You boot a dedicated VM per task, a
 [vibenv](https://github.com/cablehead/vibenv.dag), with no inbound ports. Invite
 it from your laptop before it boots:
 
 ```sh
 pai-sho invite --as vibenv-ndyg
-# 5hc4bjqfp6booceusm3jrfebbegyfi6aiqwbgx4xxqmpvg5usoyq.7fd25613dd5e17cb...
-# one-time, valid 5 minutes
+# 5hc4bjqfp6...7fd25613dd...   one-time, valid 5 minutes
 ```
 
-That one value says who to dial and proves the VM may. (The laptop's daemon is
-already running on its own network interface. [Install](#install) sets that up;
-[Setting up the network](#setting-up-the-network) covers doing it by hand.)
-
-The VM runs an [http-nu](https://github.com/cablehead/http-nu) app on `:3001` and
-[stellar](https://github.com/cablehead/stellar) on `:7331` for live CSS editing.
-Its daemon takes up the invitation and exposes both ports to the laptop:
+That one value says who to dial and proves the VM may. Its daemon takes the
+invitation up on startup, exposing an [http-nu](https://github.com/cablehead/http-nu)
+app on `3001` and [stellar](https://github.com/cablehead/stellar) on `7331`:
 
 ```sh
 pai-sho daemon --accept 5hc4bjqfp6...7fd25613dd... -e 3001,7331
 ```
 
-The VM comes up as `vibenv-ndyg`, and only your laptop can reach it. Anyone else
-who dials the VM is refused.
-
-It is projected on acceptance, with no manual step: it gets an address like
-`10.99.1.2` on the laptop's private network, and its ports bind there under the
-name `vibenv-ndyg`. Both answer by name:
+It is projected on acceptance, with no manual step: an address on your laptop's
+private network, ports bound there under the name you chose. Only your laptop can
+reach it, and anyone else who dials is refused.
 
 ```sh
 curl http://vibenv-ndyg.pai-sho:3001
 open http://vibenv-ndyg.pai-sho:7331
 ```
 
-Spin up something new on the VM and expose it live:
+Close the laptop and reopen it. The connection restores and the ports rebind.
+
+### A shared build box
+
+The roles reverse here: the provider invites, and the consumer picks the name.
+The build box serves a dashboard on `8080` and grants it with the invitation:
 
 ```sh
-http-nu :3002 -c '{|req| "hello from a new experiment"}'
-pai-sho expose 3002 --all
+# build box
+pai-sho invite --expose 8080
 ```
 
-`--all` means every peer this VM knows right now, which is your laptop and
-nothing else. It is not a standing rule: a peer admitted later gets nothing.
+```sh
+# laptop
+pai-sho accept 5hc4bjqfp6...7fd25613dd... --as buildbox
+curl http://buildbox.pai-sho:8080
+```
 
-`vibenv-ndyg` already has an address, so `3002` binds under it too, reachable at
-`http://vibenv-ndyg.pai-sho:3002` right away. Done with it? `pai-sho unexpose 3002`.
-
-Close the laptop and reopen it: the connection restores on its own, the surface
-rebinds, and no new invitation is needed.
+[docs/scenarios.md](docs/scenarios.md) works both through in full.
 
 ## Install
 
