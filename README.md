@@ -51,8 +51,7 @@ pai-sho invite --as vibenv-ndyg
 # 5hc4bjqfp6...7fd25613dd...   one-time, valid 5 minutes
 ```
 
-One value, two halves: the key says which machine to dial, and the code admits
-the VM. Its daemon takes the invitation up on startup, exposing an
+Its daemon takes the invitation up on startup, exposing an
 [http-nu](https://github.com/cablehead/http-nu) app on `localhost:3001` and
 [stellar](https://data-star.dev/pro#stellar-css) on `localhost:7331`:
 
