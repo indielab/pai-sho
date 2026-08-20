@@ -26,8 +26,8 @@
 
 ### A shared build box
 
-A team runs a long-lived build box serving a dashboard on `8080`. It invites your
-laptop, granting the port with the invitation:
+A team runs a long-lived build box serving a dashboard on `localhost:8080`. It
+invites your laptop, granting the port with the invitation:
 
 ```sh
 # build box
