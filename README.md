@@ -26,8 +26,8 @@
 
 ### A shared build box
 
-A team runs a long-lived build box serving a dashboard on `localhost:8080`. It
-invites your laptop, granting the port with the invitation:
+A team runs a long-lived build box. Its dashboard is on `localhost:8080`. The
+box invites your laptop and grants the port in the same command:
 
 ```sh
 # build box
@@ -51,9 +51,10 @@ pai-sho invite --as vibenv-ndyg
 # 5hc4bjqfp6...7fd25613dd...   one-time, valid 5 minutes
 ```
 
-Its daemon takes the invitation up on startup, exposing an
-[http-nu](https://github.com/cablehead/http-nu) app on `localhost:3001` and
-[stellar](https://data-star.dev/pro#stellar-css) on `localhost:7331`:
+The VM runs an [http-nu](https://github.com/cablehead/http-nu) app on
+`localhost:3001` and [stellar](https://data-star.dev/pro#stellar-css) on
+`localhost:7331`. Its daemon takes the invitation up on startup and exposes
+both:
 
 ```sh
 pai-sho daemon --accept 5hc4bjqfp6...7fd25613dd... -e 3001,7331
