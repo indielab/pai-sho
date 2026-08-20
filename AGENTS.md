@@ -21,9 +21,11 @@ All text in the repo must be ASCII only. No smart quotes, emoji, or other
 non-ASCII characters. Use plain quotes, and plain text markers like `WARNING:`
 instead of emoji.
 
+ASCII art and diagrams are a separate case. Dashes, pipes and arrows drawing a
+picture are structure, not punctuation, and no writing rule applies to them.
+
 No em-dashes, ASCII or otherwise. Not the character, and not `--` standing in for
-one. Restructure with a period, colon, comma, or parentheses. ASCII art and
-diagrams are exempt.
+one. Restructure with a period, colon, comma, or parentheses.
 
 ## Code Quality
 
@@ -46,8 +48,7 @@ comments.
 - **No landing beats.** A paragraph that descends to a short punchy close, over
   and over, is the strongest tell there is. Do not end paragraphs on a reveal.
 - **No em-dashes, ASCII or otherwise.** Not the character, and not `--` standing
-  in for one. Restructure with a period, colon, comma, or parentheses. ASCII art
-  and diagrams are exempt.
+  in for one. Restructure with a period, colon, comma, or parentheses.
 - **No opaque jargon.** Name the actual thing.
 - **No wasted words.** Each word earns its place.
 - **Vary sentence length.** Cadenced balance reads machine-generated.
