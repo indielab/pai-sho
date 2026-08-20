@@ -24,34 +24,28 @@
 
 ## Example scenarios
 
-Both assume a daemon running on your laptop. [Install](#install) sets that up;
-[Setting up the network](#setting-up-the-network) covers doing it by hand.
-
 ### A laptop boots a VM
 
 You boot a dedicated VM per task, a
-[vibenv](https://github.com/cablehead/vibenv.dag), with no inbound ports and no
-way in. Mint its invitation before it exists:
+[vibenv](https://github.com/cablehead/vibenv.dag), with no inbound ports. Invite
+it from your laptop before it boots:
 
 ```sh
-# laptop
-invite=$(pai-sho invite --as vibenv-ndyg)
-# $invite is 5hc4bjqfp6...7fd25613dd..., one-time, valid 5 minutes
+pai-sho invite --as vibenv-ndyg
+# 5hc4bjqfp6...7fd25613dd...   one-time, valid 5 minutes
 ```
 
-That one value says who to dial and proves the VM may, so it is the whole of the
-VM's network config. Boot the VM with it in the startup command, running an
-[http-nu](https://github.com/cablehead/http-nu) app on `3001` and stellar on
-`7331`:
+That one value says who to dial and proves the VM may. Its daemon takes the
+invitation up on startup, exposing an [http-nu](https://github.com/cablehead/http-nu)
+app on `3001` and stellar on `7331`:
 
 ```sh
-# the VM's startup command
-pai-sho daemon --accept "$invite" -e 3001,7331
+pai-sho daemon --accept 5hc4bjqfp6...7fd25613dd... -e 3001,7331
 ```
 
-Nothing is typed on the VM. It dials home, and is projected on acceptance: an
-address on your laptop's private network, ports bound there under the name you
-chose. Only your laptop can reach it, and anyone else who dials is refused.
+It is projected on acceptance, with no manual step: an address on your laptop's
+private network, ports bound there under the name you chose. Only your laptop can
+reach it, and anyone else who dials is refused.
 
 ```sh
 curl http://vibenv-ndyg.pai-sho:3001
