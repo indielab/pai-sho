@@ -34,6 +34,9 @@ broke a page that used to come out clean.
 
 Two layers, because the model needs an API key and CI does not have one:
 
+`prose-check` reads `git ls-files`, so stage your changes before running it or
+new files are skipped. CI does not have that problem.
+
 **In CI, no key.** `scripts/prose-check` runs over every tracked markdown file,
 including every `accepted.md`. This gates what ships. It also fails when
 `PROMPT.sha256` does not match `PROMPT.md`, which means the prompt was edited

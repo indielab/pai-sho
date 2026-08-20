@@ -14,9 +14,17 @@ FENCE = re.compile(r"```.*?```", re.S)
 HTML_BLOCK = re.compile(r"<(p|div|h1|table)\b.*?</\1>", re.S)
 HTML = re.compile(r"<[^>]+>")
 
-# ADRs are an append-only record of decisions as they were made. Rewriting them
-# for style would destroy the thing they exist for, so they are not gated.
-SKIP = ("docs/adr/",)
+# Not gated:
+#   docs/adr/            an append-only record of decisions as they were made;
+#                        rewriting them for style would destroy their purpose
+#   tech-writer inputs   briefs are fact lists, and PROMPT.md quotes bad prose
+#                        on purpose as examples. Only accepted.md is gated.
+SKIP = (
+    "docs/adr/",
+    "docs/tech-writer/PROMPT.md",
+    "docs/tech-writer/README.md",
+)
+SKIP_NAMES = ("brief.md",)
 LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
 TABLE = re.compile(r"^\s*\|")
 
@@ -95,7 +103,11 @@ def main(argv):
         files = subprocess.run(
             ["git", "ls-files", "*.md"], capture_output=True, text=True
         ).stdout.split()
-        files = [f for f in files if not f.startswith(SKIP)]
+        files = [
+            f
+            for f in files
+            if not f.startswith(SKIP) and not f.endswith(SKIP_NAMES)
+        ]
 
     total = 0
     for f in files:
