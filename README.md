@@ -45,7 +45,7 @@ pai-sho invite --as vibenv-ndyg
 
 That one value says who to dial and proves the VM may. Its daemon takes the
 invitation up on startup, exposing an [http-nu](https://github.com/cablehead/http-nu)
-app on `3001` and [stellar](https://github.com/cablehead/stellar) on `7331`:
+app on `3001` and stellar on `7331`:
 
 ```sh
 pai-sho daemon --accept 5hc4bjqfp6...7fd25613dd... -e 3001,7331
