@@ -1,3 +1,8 @@
 /target/
 .ralph/
 .opencode/
+
+# local prose tooling, not part of the project
+docs/tech-writer/
+scripts/prose-check
+scripts/judge-eval

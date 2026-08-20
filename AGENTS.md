@@ -50,11 +50,6 @@ comments.
 The common thread: de-cadence. Say each thing once, plainly, and let the
 sentences be uneven.
 
-Run `scripts/prose-check` before committing prose. It catches the mechanical
-tells. It cannot catch invented detail or rhetorical framing, so narrative prose
-(taglines, changelog stories, positioning) is written or approved by the author,
-not generated.
-
 ## Key Concepts
 
 - **Daemon**: Single iroh Endpoint with a stable key, manages all peers
