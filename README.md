@@ -35,9 +35,10 @@ pai-sho invite --as vibenv-ndyg
 # 5hc4bjqfp6...7fd25613dd...   one-time, valid 5 minutes
 ```
 
-That one value says who to dial and proves the VM may. Its daemon takes the
-invitation up on startup, exposing an [http-nu](https://github.com/cablehead/http-nu)
-app on `3001` and stellar on `7331`:
+One value, two halves: the key says which machine to dial, and the code admits
+the VM. Its daemon takes the invitation up on startup, exposing an
+[http-nu](https://github.com/cablehead/http-nu) app on `3001` and
+[stellar](https://data-star.dev/pro#stellar-css) on `7331`:
 
 ```sh
 pai-sho daemon --accept 5hc4bjqfp6...7fd25613dd... -e 3001,7331
@@ -200,9 +201,9 @@ identity, not a shareable address. You cannot hand out reach by leaking a string
 
 **Invitations.** A connection from an unknown key is refused unless it carries a
 code from `invite`. The code is spent on use, and the peer it admitted survives
-restarts, so a reboot does not orphan a workload. An invitation is `<key>.<code>`:
-who to dial, and the proof you may. When you already know a peer's key,
-`invite <key>` authorizes it with no secret created at all
+restarts, so a reboot does not orphan a workload. An invitation is
+`<key>.<code>`: the key says who to dial, the code admits you. When you already
+know a peer's key, `invite <key>` authorizes it with no secret created at all
 ([ADR 0006](docs/adr/0006-invitations.md),
 [ADR 0003](docs/adr/0003-host-attested-enrollment.md)).
 

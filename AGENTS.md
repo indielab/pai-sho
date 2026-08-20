@@ -30,7 +30,7 @@ Before committing:
 
 - **Daemon**: Single iroh Endpoint with a stable key, manages all peers
 - **Peer**: Remote daemon identified by EndpointId
-- **Invitation**: `<key>.<code>` -- who to dial, and the proof you may. One side runs `invite`, the other `accept`. `invite <key>` authorizes a key you already know and creates no secret. See docs/adr/0006
+- **Invitation**: `<key>.<code>` -- the key says who to dial, the code admits you. One side runs `invite`, the other `accept`. `invite <key>` authorizes a key you already know and creates no secret. See docs/adr/0006
 - **Expose**: Grant a specific TCP port to specific peer keys. Default deny: no grant, no access. `--to` or `--all` is required
 - **Surface**: A peer's ports addressed as a unit at a dedicated local IP, under the name from `--as`, or a truncated key if nothing named it
 - **Auto-project**: On its first announced port a peer is projected automatically -- an address is allocated and its ports bind there, so reach is automatic. `project`/`unproject` are the override (pin an IP, rename, toggle off). See docs/adr/0004 and 0005

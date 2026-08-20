@@ -109,11 +109,11 @@ curl http://buildbox.pai-sho:8080
 
 Two commands, one per machine, one value between them.
 
-- **The invitation is `<key>.<code>`**, so it is self-contained: it says who to
-  dial and proves I may. This is what `ticket` should have been. `ticket()` was
-  `endpoint.id().to_string()` under a `TODO: proper ticket serialization`, and
-  the word is gone: a bare key is just a key, which is what the host-attested
-  path wants to move.
+- **The invitation is `<key>.<code>`**, so it is self-contained: the key says
+  who to dial, and the code admits me. This is what `ticket` should have been.
+  `ticket()` was `endpoint.id().to_string()` under a `TODO: proper ticket
+  serialization`, and the word is gone: a bare key is just a key, which is what
+  the host-attested path wants to move.
 - **`--expose` on the invitation** attaches the grant to the friendship that
   justifies it. Still default deny, still directed at one key; the key is filled
   in on acceptance instead of typed twice.
