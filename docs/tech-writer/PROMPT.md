@@ -24,6 +24,20 @@ was generated. Examples of what not to do:
     Reach is explicit.
     The commands came last.
 
+**No opening beat either.** Do not start a paragraph with a one-word sentence
+used as a drum hit, then explain it. "The problem:" "Here goes." Fold it into
+the sentence that follows. Conventional changelog labels are fine, so "Breaking:"
+or "Security:" may lead a line.
+
+**Say it the way a person would say it out loud.** Prefer the active voice and a
+concrete subject. "Six commands are gone" beats "the CLI is overhauled". "You
+now have to name who you are granting to" beats "`expose` now requires a
+grantee". If a sentence would sound odd spoken aloud to a colleague, rewrite it.
+
+**No first person.** Do not write "we", "our", "I", or "us". State what the
+software does and what changed. "Both flows were written out first", not "we
+wrote both flows out first". The brief will say if an exception applies.
+
 **No trailing participial coda.** Do not tack a ", ...ing ..." or ", ...ed ..."
 clause onto a sentence that already finished. Write "It invites your laptop and
 grants the port", not "It invites your laptop, granting the port".
@@ -51,6 +65,27 @@ quotes, and plain words.
 limit, not a suggestion. Going over means cutting facts. Choose the facts that
 answer the goal and drop the rest; a brief lists what is true, not what must
 appear.
+
+**Do not transcribe the brief.** The brief is shorthand notes, often written in
+a hurry. Phrases in it are facts to convey, not wording to reuse. If a phrase
+there reads oddly out loud ("be announced no ports"), that is the note-taker's
+shorthand and you must find the words a person would actually use.
+
+**No mid-paragraph beat.** A short dramatic sentence dropped between two longer
+ones ("It did not work.") is a story move. Join it to the sentence beside it.
+
+**Keep referents local.** Do not write "the same exercise" or "this approach"
+pointing back two paragraphs. Name the thing again.
+
+**No noun pile between subject and verb.** "The first flow, a laptop already
+running a daemon for other peers reaching a shared build box, did not work" loses
+the listener before the verb arrives. Split it.
+
+**Make the numbers reconcile.** If you say six things changed, the reader must be
+able to find six. Either name them all or do not give a count.
+
+**Lead with the consequence.** In a changelog, the item most likely to break a
+reader's setup goes first, not last. Do not save anything for the end.
 
 ## Voice
 

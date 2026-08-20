@@ -27,13 +27,29 @@ SKIP = (
 SKIP_NAMES = ("brief.md",)
 LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
 TABLE = re.compile(r"^\s*\|")
+ALLOW_FP = "<!-- prose-check: allow first-person -->"
+
+# Conventional changelog labels. A label is not a rhetorical beat.
+LABELS = re.compile(r"^(Breaking|Security|Deprecated|Note|Fixed|Added)\b[.:]", re.I)
+
+# Headings that frame the page as a story rather than naming what it answers.
+# A deny-list, not a detector. Add to it when one gets through.
+STORY_HEADINGS = re.compile(
+    r"^#+\s*(where this came from|how we got here|the story|the journey|"
+    r"a brief history|the road to|what happened|behind the scenes|"
+    r"our journey|the backstory|how it all)",
+    re.I,
+)
+FIRST_PERSON = re.compile(r"\b(we|we're|we've|our|ours|us|i|i'm|i've|my|me)\b", re.I)
 
 
 def prose(text):
     """Strip code fences, HTML, table rows; keep link text only."""
     text = FENCE.sub("", text)
     text = HTML_BLOCK.sub("", text)
+    text = text.replace(ALLOW_FP, "\x00FP\x00")
     text = HTML.sub("", text)
+    text = text.replace("\x00FP\x00", ALLOW_FP)
     text = LINK.sub(r"\1", text)
     return "\n".join(l for l in text.split("\n") if not TABLE.match(l))
 
@@ -57,7 +73,15 @@ def check(path):
         line = text[: m.start()].count("\n") + 1
         out.append((line, "non-ascii", repr(m.group(0))))
 
+    for i, line in enumerate(text.split("\n"), 1):
+        if STORY_HEADINGS.match(line.strip()):
+            out.append((i, "narrative heading", line.strip()[:70]))
+
     for para in paragraphs(text):
+        if not para.startswith(ALLOW_FP):
+            m = FIRST_PERSON.search(para)
+            if m:
+                out.append((0, "first person", f"'{m.group(0)}' in: {para[:55]}"))
         sents = sentences(para)
 
         for s in sents:
@@ -80,6 +104,17 @@ def check(path):
                 re.I,
             ):
                 out.append((0, "announces structure", s[:70]))
+
+        # An opening beat: a one- or two-word sentence used as a drum hit
+        # before the real sentence. "Breaking." "Note." "The problem:"
+        if len(sents) >= 2:
+            first = sents[0]
+            if (
+                len(first.split()) <= 2
+                and not first.rstrip(".").endswith(":")
+                and not LABELS.match(first)
+            ):
+                out.append((0, "opens on a beat", first[:70]))
 
         # Cadence: a paragraph that descends to a short landing beat.
         if len(sents) >= 3:

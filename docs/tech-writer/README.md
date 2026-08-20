@@ -10,11 +10,23 @@ page.
 1. Write a brief: the goal, the facts, and the constraints. Facts only. The
    writer is told to invent nothing, so anything missing from the brief cannot
    appear in the output.
+
+   Write the facts as ugly shorthand, not as sentences. A brief written in
+   polished prose gets transcribed, and whatever tics are in your phrasing end up
+   on the page. Terse notes with no rhythm give the writer nothing to copy.
 2. Run the writer with `PROMPT.md` plus the brief.
-3. Run `scripts/prose-check` on the draft.
-4. On failure, **change `PROMPT.md`, not the draft**, and go back to 2. Fixing
-   the draft by hand teaches nothing and the next page repeats the mistake.
-5. When it passes and the facts check out, save the draft as `accepted.md`.
+3. Run `scripts/prose-check` on the draft. This catches the mechanical tells.
+4. Run the judge with `JUDGE.md`, the brief, and the draft. This catches what a
+   script cannot: stilted phrasing, invented claims, an imposed narrative arc.
+   The judge does not see the writer's reasoning and is told to assume the draft
+   is trying to pass.
+5. On any failure, **change `PROMPT.md`, not the draft**, and go back to 2.
+   Fixing the draft by hand teaches nothing and the next page repeats it.
+6. When both stages pass, save the draft as `accepted.md`.
+
+Three stages because they catch different things. The checker is exact and free.
+The judge has taste and costs a call. Neither can tell whether the page is
+*true*, which is why a human writes the brief.
 
 The aim is the smallest prompt that reliably passes. A rule that never fires is
 noise; delete it.
@@ -22,6 +34,7 @@ noise; delete it.
 ## Layout
 
     PROMPT.md              the writer's instructions
+    JUDGE.md               the reviewer's instructions
     PROMPT.sha256          hash of PROMPT.md when cases were last regenerated
     cases/<name>/brief.md      goal, facts, constraints
     cases/<name>/accepted.md   the output that was accepted
