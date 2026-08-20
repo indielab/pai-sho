@@ -310,7 +310,7 @@ A Tailscale node registers with the
 [coordination server](https://tailscale.com/blog/how-tailscale-works), which
 decides membership and hands it a filtered list of the peers it may see. A
 pai-sho box dials your laptop by public key, resolved by
-[iroh's discovery](https://www.iroh.computer/docs/concepts/discovery).
+[iroh's address lookup](https://www.iroh.computer/docs/concepts/discovery).
 Nothing in that path can add a peer to your set, and there is nothing to sign up
 for.
 
