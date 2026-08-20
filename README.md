@@ -24,11 +24,27 @@
 
 ## Example scenarios
 
+### A shared build box
+
+A team runs a long-lived build box serving a dashboard on `8080`. It invites your
+laptop, granting the port with the invitation:
+
+```sh
+# build box
+pai-sho invite --expose 8080
+```
+
+```sh
+# laptop
+pai-sho accept 5hc4bjqfp6...7fd25613dd... --as buildbox
+curl http://buildbox.pai-sho:8080
+```
+
 ### A laptop boots a VM
 
-You boot a dedicated VM per task, a
-[vibenv](https://github.com/cablehead/vibenv.dag), with no inbound ports. Invite
-it from your laptop before it boots:
+The roles reverse here: the consumer invites, and picks the name. You boot a
+dedicated VM per task, a [vibenv](https://github.com/cablehead/vibenv.dag), with
+no inbound ports. Invite it from your laptop before it boots:
 
 ```sh
 pai-sho invite --as vibenv-ndyg
@@ -54,22 +70,6 @@ open http://vibenv-ndyg.pai-sho:7331
 ```
 
 Close the laptop and reopen it. The connection restores and the ports rebind.
-
-### A shared build box
-
-The roles reverse here: the provider invites, and the consumer picks the name.
-The build box serves a dashboard on `8080` and grants it with the invitation:
-
-```sh
-# build box
-pai-sho invite --expose 8080
-```
-
-```sh
-# laptop
-pai-sho accept 5hc4bjqfp6...7fd25613dd... --as buildbox
-curl http://buildbox.pai-sho:8080
-```
 
 [docs/scenarios.md](docs/scenarios.md) works both through in full.
 
