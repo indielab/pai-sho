@@ -5,6 +5,7 @@
 //! a valid enrollment token. Anyone else is refused -- no announcement, no
 //! tunnel.
 
+use crate::core::backoff::Backoff;
 use crate::core::session::{Action, Admission, ConnId, Refusal, Session};
 use crate::enroll::Pins;
 use crate::netstack::{Accept, NetStack};
@@ -24,8 +25,6 @@ use tokio::io::AsyncWriteExt;
 use tokio::sync::{mpsc, Mutex, Notify, RwLock};
 use tracing::{error, info, warn};
 
-const BACKOFF_INITIAL: Duration = Duration::from_secs(1);
-const BACKOFF_MAX: Duration = Duration::from_secs(60);
 /// How long an unknown incoming peer gets to present its enrollment token
 const ENROLL_TIMEOUT: Duration = Duration::from_secs(10);
 /// How many times to try binding a forwarded port before giving up
@@ -208,12 +207,10 @@ impl PeerManager {
     /// Long-running task managing a peer's connection lifecycle.
     /// Runs the unified connection handler and reconnects with backoff on failure.
     async fn peer_connection_loop(manager: Arc<PeerManager>, peer: Arc<Peer>) {
-        // A peer added but never dialed starts at zero, so its first dial is
-        // immediate. Backoff only applies once an attempt has failed.
         let mut backoff = if peer.connection.read().await.is_some() {
-            BACKOFF_INITIAL
+            Backoff::connected()
         } else {
-            Duration::ZERO
+            Backoff::unreached()
         };
 
         loop {
@@ -247,14 +244,18 @@ impl PeerManager {
                     return;
                 }
 
-                info!("reconnecting to {} in {:?}", peer.endpoint_id, backoff);
+                info!(
+                    "reconnecting to {} in {:?}",
+                    peer.endpoint_id,
+                    backoff.delay()
+                );
 
                 // Wait for backoff, but wake early if an incoming connection arrives
                 tokio::select! {
-                    _ = tokio::time::sleep(backoff) => {}
+                    _ = tokio::time::sleep(backoff.delay()) => {}
                     _ = peer.conn_notify.notified() => {
                         info!("{} reconnected via incoming connection", peer.endpoint_id);
-                        backoff = BACKOFF_INITIAL;
+                        backoff.reset();
                         break;
                     }
                 }
@@ -276,12 +277,12 @@ impl PeerManager {
                             }
                         }
                         manager.announce_to(&peer).await;
-                        backoff = BACKOFF_INITIAL;
+                        backoff.reset();
                         break;
                     }
                     Err(e) => {
                         warn!("reconnect to {} failed: {}", peer.endpoint_id, e);
-                        backoff = (backoff * 2).min(BACKOFF_MAX);
+                        backoff.failed();
                     }
                 }
             }
