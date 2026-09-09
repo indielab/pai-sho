@@ -8,8 +8,9 @@ use std::time::Duration;
 
 /// First delay after a failed dial
 pub const INITIAL: Duration = Duration::from_secs(1);
-/// Ceiling the delay climbs to and stays at
-pub const MAX: Duration = Duration::from_secs(60);
+/// Ceiling. These are machines you own, so a peer that has been gone for hours
+/// should get a call within seconds of coming back.
+pub const MAX: Duration = Duration::from_secs(10);
 
 pub struct Backoff {
     next: Duration,
@@ -83,7 +84,7 @@ mod tests {
     #[test]
     fn the_delay_climbs_to_the_ceiling_and_stays() {
         let mut backoff = Backoff::connected();
-        for expected in [2, 4, 8, 16, 32, 60, 60, 60] {
+        for expected in [2, 4, 8, 10, 10, 10] {
             backoff.failed();
             assert_eq!(backoff.delay(), Duration::from_secs(expected));
         }

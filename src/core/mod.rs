@@ -4,6 +4,7 @@
 //! feeds it events and carries out the actions it returns.
 
 pub mod backoff;
+pub mod dial;
 pub mod grants;
 pub mod invite;
 pub mod session;

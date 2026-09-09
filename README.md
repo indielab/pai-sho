@@ -252,7 +252,7 @@ DNS. Point the OS at it for `.pai-sho` only: `/etc/resolver/pai-sho` on macOS, a
 dnsmasq `server=/pai-sho/10.99.0.53` forward on Linux
 ([ADR 0005](docs/adr/0005-auto-project-and-owned-resolver.md)).
 
-**Reconnection.** If the connection drops, both sides retry with exponential
+**Reconnection.** If the connection drops, both ends retry with exponential
 backoff. Projected surfaces stay put and rebind when the link returns.
 
 **Structure.** The decisions (who may connect, which grants exist, whether a

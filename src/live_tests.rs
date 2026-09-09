@@ -504,3 +504,40 @@ async fn an_unnamed_peer_still_gets_a_name() {
     let short: String = a.key().chars().take(8).collect();
     assert!(b.daemon.peers().resolve_name(&short).await.is_some());
 }
+
+/// Close the link and wait until a write succeeds again.
+#[tokio::test]
+async fn a_severed_link_comes_back() {
+    let port = echo_server().await;
+    let (a, b) = pair(IpAddr::V4(Ipv4Addr::LOCALHOST)).await;
+    enroll(&a, &b, "b").await;
+
+    a.request(Request::Expose {
+        port,
+        to: vec![b.key()],
+        all: false,
+    })
+    .await;
+
+    let addr = bound_addr(&b, port).await;
+    let mut sock = TcpStream::connect(addr).await.unwrap();
+    sock.write_all(b"before").await.unwrap();
+    let mut buf = [0u8; 6];
+    sock.read_exact(&mut buf).await.unwrap();
+    assert_eq!(&buf, b"before");
+    drop(sock);
+
+    let b_key = b.daemon.endpoint().id();
+    a.daemon.peers().sever(&b_key).await;
+
+    // The listener stays up while the link is down, so the write is the test.
+    until(20, || async {
+        let addr = bound_addr(&b, port).await;
+        let mut sock = TcpStream::connect(addr).await.ok()?;
+        sock.write_all(b"after").await.ok()?;
+        let mut buf = [0u8; 5];
+        sock.read_exact(&mut buf).await.ok()?;
+        (&buf == b"after").then_some(())
+    })
+    .await;
+}

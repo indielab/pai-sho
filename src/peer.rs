@@ -6,6 +6,7 @@
 //! tunnel.
 
 use crate::core::backoff::Backoff;
+use crate::core::dial::{self, Keep};
 use crate::core::session::{Action, Admission, ConnId, Refusal, Session};
 use crate::enroll::Pins;
 use crate::netstack::{Accept, NetStack};
@@ -25,6 +26,8 @@ use tokio::io::AsyncWriteExt;
 use tokio::sync::{mpsc, Mutex, Notify, RwLock};
 use tracing::{error, info, warn};
 
+/// How long to let a dial run before giving up and backing off
+const DIAL_TIMEOUT: Duration = Duration::from_secs(15);
 /// How long an unknown incoming peer gets to present its enrollment token
 const ENROLL_TIMEOUT: Duration = Duration::from_secs(10);
 /// How many times to try binding a forwarded port before giving up
@@ -37,12 +40,15 @@ struct Peer {
     endpoint_id: EndpointId,
     /// What we call this peer, from `--as` (None until something names it)
     label: Option<String>,
-    /// Whether we dial this peer to reconnect. True for peers we accepted;
-    /// peers that accepted our invitation dial us, so we just wait.
-    dial: bool,
+    /// We dial this peer. False only while we are the inviter and they have
+    /// not called home yet.
+    dial: AtomicBool,
     /// An invitation's one-time code, presented on connect by the accepter
     enroll_token: Option<String>,
     connection: RwLock<Option<Connection>>,
+    /// Who opened the connection above. Written under its write lock, so the
+    /// two move together.
+    conn_dialed_by_us: AtomicBool,
     /// Ports this peer exposes
     exposed_ports: RwLock<Vec<u16>>,
     /// Crate version the peer last announced. None until it sends one.
@@ -69,9 +75,10 @@ impl Peer {
         Arc::new(Self {
             endpoint_id,
             label,
-            dial,
+            dial: AtomicBool::new(dial),
             enroll_token,
             connection: RwLock::new(connection),
+            conn_dialed_by_us: AtomicBool::new(false),
             exposed_ports: RwLock::new(Vec::new()),
             version: RwLock::new(None),
             surface: RwLock::new(None),
@@ -160,8 +167,8 @@ impl PeerManager {
         Ok(())
     }
 
-    /// Register a peer pinned at a previous enrollment (loaded at startup).
-    /// We never dial it -- it phones home.
+    /// A peer loaded from a pin. Wait for them to call. After first contact
+    /// we dial them too.
     pub fn add_pinned(self: &Arc<Self>, key: &str, name: Option<&str>) -> Result<()> {
         let endpoint_id: EndpointId = key.parse().context("invalid key")?;
         if self.peers.contains_key(&endpoint_id) {
@@ -228,8 +235,8 @@ impl PeerManager {
                 return;
             }
 
-            if !peer.dial {
-                // This peer phones home; wait for an incoming connection
+            if !peer.dial.load(Ordering::Relaxed) {
+                // Inviter, not yet reached. They call us.
                 peer.conn_notify.notified().await;
                 if peer.removed.load(Ordering::Relaxed) {
                     return;
@@ -264,27 +271,69 @@ impl PeerManager {
                     return;
                 }
 
-                match manager.endpoint.connect(peer.endpoint_id, ALPN).await {
-                    Ok(conn) => {
-                        info!("reconnected to {}", peer.endpoint_id);
-                        *peer.connection.write().await = Some(conn.clone());
-                        // Re-present the enroll token in case the peer never
-                        // processed it (it ignores the message once we are pinned)
-                        if let Some(token) = &peer.enroll_token {
-                            let msg = PeerMessage::enroll(token.clone());
-                            if let Err(e) = Self::send_message(&conn, &msg).await {
-                                warn!("failed to send enroll token: {}", e);
-                            }
-                        }
-                        manager.announce_to(&peer).await;
+                // iroh's own dial timeout only applies once it has an address
+                // to try, so bound the call ourselves rather than let the loop
+                // stall on it.
+                let dial = tokio::time::timeout(
+                    DIAL_TIMEOUT,
+                    manager.endpoint.connect(peer.endpoint_id, ALPN),
+                )
+                .await;
+
+                let conn = match dial {
+                    Ok(Ok(conn)) => conn,
+                    Ok(Err(e)) => {
+                        warn!("reconnect to {} failed: {}", peer.endpoint_id, e);
+                        backoff.failed();
+                        continue;
+                    }
+                    Err(_) => {
+                        warn!(
+                            "reconnect to {} timed out after {:?}",
+                            peer.endpoint_id, DIAL_TIMEOUT
+                        );
+                        backoff.failed();
+                        continue;
+                    }
+                };
+
+                info!("reconnected to {}", peer.endpoint_id);
+                {
+                    let mut guard = peer.connection.write().await;
+                    let held_is_live = guard
+                        .as_ref()
+                        .is_some_and(|held| held.close_reason().is_none());
+                    let held_dialed_by_us = peer.conn_dialed_by_us.load(Ordering::Relaxed);
+                    if dial::resolve(
+                        &manager.endpoint.id(),
+                        &peer.endpoint_id,
+                        held_is_live,
+                        held_dialed_by_us,
+                        true,
+                    ) == Keep::Held
+                    {
+                        conn.close(0u32.into(), b"kept ours");
+                        drop(guard);
                         backoff.reset();
                         break;
                     }
-                    Err(e) => {
-                        warn!("reconnect to {} failed: {}", peer.endpoint_id, e);
-                        backoff.failed();
+                    if let Some(old_conn) = guard.take() {
+                        old_conn.close(0u32.into(), b"replaced");
+                    }
+                    peer.conn_dialed_by_us.store(true, Ordering::Relaxed);
+                    *guard = Some(conn.clone());
+                }
+                // Re-present the enroll token in case the peer never
+                // processed it (it ignores the message once we are pinned)
+                if let Some(token) = &peer.enroll_token {
+                    let msg = PeerMessage::enroll(token.clone());
+                    if let Err(e) = Self::send_message(&conn, &msg).await {
+                        warn!("failed to send enroll token: {}", e);
                     }
                 }
+                manager.announce_to(&peer).await;
+                backoff.reset();
+                break;
             }
         }
     }
@@ -685,14 +734,34 @@ impl PeerManager {
             None => return Ok(()),
         };
 
-        // Known peer reconnecting -- close old connection, install new one
         let mut conn_guard = peer.connection.write().await;
+        let held_is_live = conn_guard
+            .as_ref()
+            .is_some_and(|held| held.close_reason().is_none());
+        let held_dialed_by_us = peer.conn_dialed_by_us.load(Ordering::Relaxed);
+        if dial::resolve(
+            &self.endpoint.id(),
+            &remote_id,
+            held_is_live,
+            held_dialed_by_us,
+            false,
+        ) == Keep::Held
+        {
+            info!(
+                "{} dialed us while we were dialing it; keeping ours",
+                remote_id
+            );
+            conn.close(0u32.into(), b"kept ours");
+            return Ok(());
+        }
         if let Some(old_conn) = conn_guard.take() {
             old_conn.close(0u32.into(), b"replaced");
         }
+        peer.conn_dialed_by_us.store(false, Ordering::Relaxed);
         *conn_guard = Some(conn.clone());
         drop(conn_guard);
 
+        peer.dial.store(true, Ordering::Relaxed);
         peer.conn_notify.notify_one();
         info!("{} reconnected", remote_id);
 
@@ -793,7 +862,7 @@ impl PeerManager {
             label.clone().unwrap_or_default()
         );
 
-        let peer = Peer::new(remote_id, label, false, None, Some(conn));
+        let peer = Peer::new(remote_id, label, true, None, Some(conn));
         if let Some(version) = early_version {
             *peer.version.write().await = Some(version);
         }
@@ -1067,6 +1136,19 @@ impl PeerManager {
                 ip: record.ip,
                 name: record.name,
             });
+        }
+    }
+
+    /// Close the connection and leave the peer in place, like a laptop
+    /// suspending. Both ends have to reconnect.
+    #[cfg(test)]
+    pub async fn sever(&self, endpoint_id: &EndpointId) {
+        let Some(peer) = self.peers.get(endpoint_id).map(|p| p.clone()) else {
+            return;
+        };
+        let held = peer.connection.write().await.take();
+        if let Some(conn) = held {
+            conn.close(0u32.into(), b"severed");
         }
     }
 }

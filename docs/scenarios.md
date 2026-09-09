@@ -16,9 +16,11 @@ hi, be friends, and yeah, be friends. Neither works alone. A dial from a peer
 that has not invited you is refused with `not authorized`, logged on the
 receiving machine, not the dialing one.
 
-**The accepter dials, the inviter waits.** Neither machine needs an open inbound
-port, but the inviter's daemon has to be running when the accepter says yes. If
-it is not, the accepter retries with backoff until it is.
+**The accepter dials first, then both do.** Neither machine needs an open
+inbound port, but the inviter's daemon has to be running when the accepter says
+yes. If it is not, the accepter retries until it is. Once they have connected,
+either side can bring a dropped link back: the laptop that invited a VM can
+redial when it wakes. See docs/adr/0008.
 
 **An invitation is not access.** Being someone's peer lets you talk to their
 daemon. It does not entitle you to a single port. That is `expose --to`, always
