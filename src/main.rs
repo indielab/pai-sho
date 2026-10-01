@@ -6,6 +6,7 @@ mod client;
 mod core;
 mod daemon;
 mod enroll;
+mod launchd;
 #[cfg(test)]
 mod live_tests;
 mod netstack;
@@ -36,10 +37,30 @@ struct Cli {
     command: Command,
 }
 
+#[derive(Subcommand, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DaemonService {
+    /// Install and start the launchd service. Copies this binary to
+    /// /usr/local/libexec/pai-sho. The socket is /tmp/pai-sho.sock, the key
+    /// is /usr/local/var/pai-sho/op.key, and .pai-sho resolves at 10.99.0.53.
+    Install,
+    /// Start the launchd service. Restarts it when it is already loaded, so
+    /// the socket is chowned to the user logged in now.
+    Up,
+    /// Stop the launchd service. It stays stopped across a reboot.
+    Down,
+    /// Unload the launchd service and delete its files. The key is kept.
+    Remove,
+    /// Print the launchd service state as JSON.
+    Status,
+}
+
 #[derive(Subcommand)]
 pub enum Command {
-    /// Start the daemon
+    /// Start the daemon, or manage its macOS launchd service
+    #[command(args_conflicts_with_subcommands = true)]
     Daemon {
+        #[command(subcommand)]
+        service: Option<DaemonService>,
         /// Host address for forwarding exposed ports
         #[arg(long, default_value = "127.0.0.1")]
         host: IpAddr,
@@ -169,6 +190,7 @@ async fn main() -> Result<()> {
 
     match cli.command {
         Command::Daemon {
+            service,
             host,
             accept,
             ports,
@@ -178,21 +200,28 @@ async fn main() -> Result<()> {
             socket_owner,
             socket_mode,
             name,
-        } => {
-            daemon::run(
-                host,
-                socket_path,
-                accept,
-                ports,
-                key_path,
-                resolver,
-                tun,
-                socket_owner,
-                socket_mode,
-                name,
-            )
-            .await?;
-        }
+        } => match service {
+            Some(DaemonService::Install) => launchd::install()?,
+            Some(DaemonService::Up) => launchd::up()?,
+            Some(DaemonService::Down) => launchd::down()?,
+            Some(DaemonService::Remove) => launchd::remove()?,
+            Some(DaemonService::Status) => launchd::status()?,
+            None => {
+                daemon::run(
+                    host,
+                    socket_path,
+                    accept,
+                    ports,
+                    key_path,
+                    resolver,
+                    tun,
+                    socket_owner,
+                    socket_mode,
+                    name,
+                )
+                .await?;
+            }
+        },
         _ => {
             client::send_command(socket_path, cli.command).await?;
         }
@@ -336,11 +365,40 @@ mod cli_tests {
     fn the_daemon_accepts_invitations() {
         let cli = parse(&["pai-sho", "daemon", "--accept", "abc.def", "-e", "3001"]).unwrap();
         match cli.command {
-            Command::Daemon { accept, ports, .. } => {
+            Command::Daemon {
+                service,
+                accept,
+                ports,
+                ..
+            } => {
+                assert!(service.is_none());
                 assert_eq!(accept, vec!["abc.def".to_string()]);
                 assert_eq!(ports, vec![3001]);
             }
             _ => panic!("wrong command"),
         }
+    }
+
+    #[test]
+    fn daemon_service_commands_parse() {
+        for (arg, want) in [
+            ("install", DaemonService::Install),
+            ("up", DaemonService::Up),
+            ("down", DaemonService::Down),
+            ("remove", DaemonService::Remove),
+            ("status", DaemonService::Status),
+        ] {
+            let cli = parse(&["pai-sho", "daemon", arg]).unwrap();
+            match cli.command {
+                Command::Daemon { service, .. } => assert_eq!(service, Some(want)),
+                _ => panic!("wrong command"),
+            }
+        }
+    }
+
+    #[test]
+    fn daemon_service_rejects_run_flags() {
+        assert!(parse(&["pai-sho", "daemon", "install", "--tun", "utun"]).is_err());
+        assert!(parse(&["pai-sho", "daemon", "--tun", "utun", "install"]).is_err());
     }
 }

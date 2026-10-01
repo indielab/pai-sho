@@ -93,8 +93,9 @@ eget cablehead/pai-sho
 
 Or grab a binary from [releases](https://github.com/cablehead/pai-sho/releases).
 
-Homebrew also ships a launchd service that creates the private network and
-points the system at the `.pai-sho` resolver. It does not start on its own; see
+On macOS, `pai-sho daemon install` installs and starts a launchd service that
+creates the private network and points the system at the `.pai-sho` resolver.
+Homebrew ships the same kind of service, and does not start it on its own. See
 [Setting up the network](#setting-up-the-network).
 
 ## Setting up the network
@@ -105,8 +106,28 @@ points the system at the `.pai-sho` resolver. It does not start on its own; see
 
 ### macOS
 
-Homebrew ships a supervised launch. Trust the tap as your user (once), then start
-the service:
+`daemon install` writes a LaunchDaemon, copies this binary to
+`/usr/local/libexec/pai-sho`, and starts it as root. It prompts for an
+administrator password. The daemon creates the utun. The service writes
+`/etc/resolver/pai-sho` and chowns the control socket to the logged-in user,
+so the CLI needs no sudo. `daemon install` prints this machine's key:
+
+```sh
+pai-sho daemon install
+```
+
+`daemon up` starts the service. When it is already loaded, `up` restarts it,
+so the socket is chowned to whoever is logged in now. `daemon down` stops it
+and leaves it stopped across a reboot. `daemon remove` unloads it and deletes
+the service files. The key at `/usr/local/var/pai-sho/op.key` is kept, and a
+later install is the same peer. `daemon status` prints the job as JSON:
+whether it is installed, running, or stopped. It reads launchd as the current user.
+
+The service runs `/usr/local/libexec/pai-sho`. After an upgrade, `daemon install`
+copies the new binary into place and restarts the service.
+
+Homebrew's formula installs a launchd service with these same flags. Trust the
+tap as your user (once), then start it:
 
 ```sh
 brew trust cablehead/tap
@@ -127,7 +148,7 @@ hands you the control socket, so the CLI needs no sudo:
 pai-sho key
 ```
 
-To run it by hand instead of under the supervisor:
+To run the daemon in the foreground:
 
 ```sh
 sudo pai-sho daemon --tun utun --socket-owner "$(stat -f%Su /dev/console)"
@@ -164,6 +185,11 @@ pai-sho [--socket <path>] <command>
 | Command | Description |
 |---------|-------------|
 | `daemon [options]` | Start the daemon |
+| `daemon install` | macOS: install and start the launchd service |
+| `daemon up` | macOS: start the launchd service, or restart it if it is loaded |
+| `daemon down` | macOS: stop the launchd service until the next `up` |
+| `daemon remove` | macOS: unload the launchd service and delete its files |
+| `daemon status` | macOS: print the launchd service state as JSON |
 | `key` | Print this daemon's key (hand this to a peer) |
 | `invite [<key>] [--as <name>] [--expose <port>...]` | Extend an invitation. With a key, to that key alone (host-attested, no secret). Without one, print a one-time invitation valid 5 minutes. |
 | `accept <invite\|key> [--as <name>]` | Take up an invitation, or reach a peer by key |
