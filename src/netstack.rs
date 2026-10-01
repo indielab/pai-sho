@@ -257,11 +257,11 @@ fn tun_write(fd: RawFd, pkt: &[u8]) -> io::Result<()> {
         framed.extend_from_slice(&af.to_be_bytes());
         framed.extend_from_slice(pkt);
         let n = unsafe { libc::write(fd, framed.as_ptr() as *const libc::c_void, framed.len()) };
-        return if n >= 0 {
+        if n >= 0 {
             Ok(())
         } else {
             Err(io::Error::last_os_error())
-        };
+        }
     }
     #[cfg(not(target_os = "macos"))]
     {
